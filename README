@@ -1,0 +1,145 @@
+Para levantar un servidor realizamos los siguientes pasos:
+
+- Vamos a la carpeta "server.js"
+
+- Importamos express
+
+    import express from 'express'
+
+- Luego definimos una variable que se llame server, la definimos ejecutamos una instancia del modulo.
+
+    let server = express()
+
+- Luego elegimos el puerto el cual va a correr nuestro servidor.
+
+    let PORT = 8080
+
+- Luego definimos una funcion, que se va a ejecutar cuando el servidor este full cargado y va a tener un console log que diga "server ready on port: +PORT"
+
+    let ready = () => console.log('server ready on port: '+PORT)
+
+- El ultimo paso utilizamos el metodo listen que necesita 2 parametros, el primero es el puerto donde se va a levantar el servidor y el segundo es la callback que va a llamar para que se ejecute correctamente.
+
+    server.listen(PORT,ready)
+
+- Esta linea de codigo la agrego ya que permite que el servidor pueda interpretar mejor los datos complejos que viajen desde la url.
+
+    server.use(express.urlencoded({extended:true}))
+
+- Por ultimo ejecutamos el comando "npm run dev" para poder levantar el servidor.
+
+
+---------------------ENDPOINTS------------------------
+
+Luego de levantar el servidor nos damos cuenta que no hay nada en la pantalla para visualizar, entonces creamos diferentes endpoints para acceder a diferentes rutas. Y importamos los productos y cart, para poder acceder a ellos.
+
+    import manager from './products.js'
+    import manager2 from './cart.js'
+
+Creamos los endpoints para products.
+
+- El primer endpoints va a tener la ruta "/", la cual se va a encargar de informar la cantidad de productos y carritos que alla guardados, y mostrarlos con un mensaje.
+
+    //declaramos la ruta.
+    let index_route = '/'
+    //indicamos la funcion que va a cumplir.
+    let index_function = (req,res) => {
+        let quantity = manager.getProducts().length
+        let quantity2 = manager2.getCarts().length
+        console.log(quantity)
+        console.log(quantity2)
+        // informa la cantidad de products y carts que hay.
+        return res.send(`there are ${quantity} products, and there are ${quantity2} carts`)
+    }
+    // Definimos el endpoints , primero se pone la ruta y luego la funcion
+    server.get(index_route,index_function)
+
+- El segundo endpoints va a tener la ruta "/products", el cual se encarga de leer el archivo de productos y devolverlos dentro de un objeto. Y va a tener un limitador de productos a mostrar, en este caso es 5.
+
+    let query_route = '/products'
+    let query_function = (req,res) => {
+        //limita los productos a mostrar en el objeto.
+        let limit = req.query.limit ?? 5
+        let products = manager.getProducts().slice(0,limit)
+        //este if se encarga de consultar si hay productos, si no hay entonces devuelve not found.
+        if(products.length>0){
+            return res.send({
+                success: true,
+                products
+            })
+        } else{
+            return res.send({
+                success: false,
+                products: 'not found'
+            })
+        }
+    }
+    server.get(query_route,query_function)
+
+- El tercer endpoints va a tener la ruta "/products/id", el cual va a leer el archivo de productos y va a devolver el producto buscado por id.
+
+    let one_route = '/products/:id'
+    let one_function = (req,res) => {
+        //se encarga de buscar el id.
+        let parametros = req.params
+        let id = Number(parametros.id)
+        let one = manager.getProductById(id)
+        console.log(one)
+        // el if consulta si el id existe, si no existe entonces devuelve un objeto vacio.
+        if(one){
+            return res.send({
+                success: true, 
+                product: one
+            })
+        } else {
+            return res.send({
+                success: false, 
+                product: {}
+            })
+        }
+    }
+    server.get(one_route,one_function)
+
+Luego los endpoints de carts son los mismos pero con diferente ruta y buscan en los carritos. Pero la funcion es la misma
+
+- El primero con la ruta "/carts", lee el archivo de carritos y devuelve un objeto con las propiedades.
+
+    let querys_route = '/carts'
+    let querys_function = (req,res) => {
+        let limit = req.query.limit ?? 7
+        let carts = manager2.getCarts().slice(0,limit)
+        if(carts.length>0){
+            return res.send({
+                success: true,
+                carts
+            })
+        } else{
+            return res.send({
+                success: false,
+                carts: 'not found'
+            })
+        }
+    }
+    server.get(querys_route,querys_function)
+
+- El segundo con la ruta "/carts/id", lee el archivo de carritos y devuelve un objeto con las propiedades del id buscado.
+
+    let two_route = '/carts/:id'
+    let two_function = (req,res) => {
+        let parametros = req.params
+        let id = Number(parametros.id)
+        let two = manager2.getCartById(id)
+        console.log(two)
+        if(two){
+            return res.send({
+                success: true, 
+                cart: two
+            })
+        } else {
+            return res.send({
+                success: false, 
+                cart: {}
+            })
+        }
+    }
+    server.get(two_route,two_function)
