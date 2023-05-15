@@ -1,0 +1,142 @@
+Para levantar un servidor realizamos los siguientes pasos:
+
+- Vamos a la carpeta "server.js"
+
+- Importamos express
+
+    import express from 'express'
+
+- Luego definimos una variable que se llame server, la definimos ejecutamos una instancia del modulo.
+
+    let server = express()
+
+- Luego elegimos el puerto el cual va a correr nuestro servidor.
+
+    let PORT = 8080
+
+- Luego definimos una funcion, que se va a ejecutar cuando el servidor este full cargado y va a tener un console log que diga "server ready on port: +PORT"
+
+    let ready = () => console.log('server ready on port: '+PORT)
+
+- El ultimo paso utilizamos el metodo listen que necesita 2 parametros, el primero es el puerto donde se va a levantar el servidor y el segundo es la callback que va a llamar para que se ejecute correctamente.
+
+    server.listen(PORT,ready)
+
+- Esta linea de codigo la agrego ya que permite que el servidor pueda interpretar mejor los datos complejos que viajen desde la url.
+
+    server.use(express.urlencoded({extended:true}))
+
+- Por ultimo ejecutamos el comando "npm run dev" para poder levantar el servidor.
+
+/* Router */
+
+- Luego creamos una carpeta llamada "src" donde va a estar alojado el servidor, la cual  nos va a servir para organizar nuetro codigo, y las diferentes entidades tendran aislado el comportamiento interno, como configuraciones, middlewares, etc.
+
+- Dentro de la carpeta creamos un archivo "index.js" que va a ser el enrutador principal de la aplicacion. Aca se llama solamente al enrutador de la API, esto quiere decir que todas las rutas de la api van a tener el endpoint "/api".
+
+
+    import { Router } from "express";
+    import api_router from './api/index.js'
+    //import view_router from './views/index.js'
+
+    const index_router = Router()
+    index_router.use('/api',api_router)
+    //index_router.use('/',view_router)
+
+    export default index_router
+
+
+- Ademas creamos 2 carpetas, una llamada "api" para las rutas de la api, y una llamada "views" para las rutas que vamos a renderizar desde el backend. Cada una de estas carpetas tendran un "index.js" que seran los enrutadores principales de la api y de las views.
+
+- Dentro del "index.js" de la carpeta "api" se define el endpoint del recurso (en este caso products y carts) y le asigna el enrutador de ese recurso.
+
+
+    import { Router } from "express";
+    import products_router from './products.js'
+    import cart_router from './carts.js'
+
+    const api_router = Router()
+
+    api_router.use('/products',products_router)
+    api_router.use('/carts',cart_router)
+
+    export default api_router 
+
+
+- Y dentro de "products.js" y "carts.js" que serian los enrutadores de recurso, tendremos los metodos "GET, POST, DELETE, PUT" para cada uno. Pero para poder ver los productos ahora es "/api/products" y para ver uno es "/api/products/:pid", y lo mismo con carts.
+
+
+    import { Router } from "express";
+    import manager from '../../managers/products.js'
+
+    const product_router = Router()
+
+    product_router.post('/', async(req,res,next)=> {
+        try {
+            let response = await manager.addProduct(req.body)
+            if (response===201) {
+                return res.json({ status:201,message:'product created'})
+            }
+            return res.json({ status:400,message:'not created'})
+        } catch(error) {
+            next(error)
+        }
+    })
+    product_router.get('/', async(req,res,next)=> {
+        try {
+            let products = manager.getProducts()
+            if (products.length>0) {
+                return res.json({ status:200,products })
+            }
+            let message = 'not found'
+            return res.json({ status:404,message })
+        } catch(error) {
+            next(error)
+        }
+    })
+    product_router.get('/:pid', async(req,res,next)=> {
+        try {
+            let id = Number(req.params.pid)
+            let product = manager.getProductById(id)
+            if (product) {
+                return res.json({ status:200,product })
+            }
+            let message = 'not found'
+            return res.json({ status:404,message })
+        } catch(error) {
+            next(error)
+        }
+    })
+    product_router.put('/:pid', async(req,res,next)=> {
+        try {
+            let id = Number(req.params.pid)
+            let data = req.body
+            let response = await manager.updateProduct(id,data)
+            if (response===200) {
+                return res.json({ status:200,message:'product updated'})
+            }
+            return res.json({ status:404,message:'not found'})
+        } catch(error) {
+            next(error)
+        }
+    })
+    product_router.delete('/:pid', async(req,res,next)=> {
+        try {
+            let id = Number(req.params.pid)
+            let response = await manager.deleteProduct(id)
+            if (response===200) {
+                return res.json({ status:200,message:'product deleted'})
+            }
+            return res.json({ status:404,message:'not found'})
+        } catch(error) {
+            next(error)
+        }
+    })
+
+    export default product_router
+
+
+- Por ultimo, para comprobar estos metodos en products y carts, utilizamos la aplicacion POSTMAN, la cual nos permite comprobar cada uno de estos metodos y saber si funcionan o nodemon. 
+
+
+LAS IMAGENES ESTAN EN UNA CARPETA LLAMADA "fotos POSTMAN", donde se comprueba cuando funciona y cuando salta algun error.
