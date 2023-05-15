@@ -1,12 +1,13 @@
 [
   {
-    "title": "remer",
+    "title": "remera gris",
     "description": "gorras de colores",
     "price": 5,
     "thumbnail": "foto gorras",
     "code": "gor",
     "stock": 15,
-    "id": 2
+    "id": 2,
+    "nombre": "remera gris"
   },
   {
     "title": "buzos",
@@ -79,15 +80,6 @@
     "code": "gor",
     "stock": 15,
     "id": 10
-  },
-  {
-    "title": "campera",
-    "description": "gorras de colores",
-    "price": 5,
-    "thumbnail": "foto gorras",
-    "code": "gor",
-    "stock": 15,
-    "id": 11
   },
   {
     "title": "campera de cuero",

@@ -14,7 +14,7 @@ class CartManager{
             console.log('file created at path: '+this.path)
             return 201
         } else {
-            this.carts = JSON.parse(fs.readFileSync(path,'UTF-8'))
+            this.cart = JSON.parse(fs.readFileSync(path,'UTF-8'))
             console.log('data recovered')
             return 200
         }
@@ -56,7 +56,7 @@ class CartManager{
             return null
         } else{
             console.log('finded Cart: '+id)
-            return 200
+            return one
         }
     }
 

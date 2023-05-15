@@ -28,118 +28,115 @@ Para levantar un servidor realizamos los siguientes pasos:
 
 - Por ultimo ejecutamos el comando "npm run dev" para poder levantar el servidor.
 
+/* Router */
 
----------------------ENDPOINTS------------------------
+- Luego creamos una carpeta llamada "src" donde va a estar alojado el servidor, la cual  nos va a servir para organizar nuetro codigo, y las diferentes entidades tendran aislado el comportamiento interno, como configuraciones, middlewares, etc.
 
-Luego de levantar el servidor nos damos cuenta que no hay nada en la pantalla para visualizar, entonces creamos diferentes endpoints para acceder a diferentes rutas. Y importamos los productos y cart, para poder acceder a ellos.
+- Dentro de la carpeta creamos un archivo "index.js" que va a ser el enrutador principal de la aplicacion. Aca se llama solamente al enrutador de la API, esto quiere decir que todas las rutas de la api van a tener el endpoint "/api".
 
-    import manager from './products.js'
-    import manager2 from './cart.js'
 
-Creamos los endpoints para products.
+    import { Router } from "express";
+    import api_router from './api/index.js'
+    //import view_router from './views/index.js'
 
-- El primer endpoints va a tener la ruta "/", la cual se va a encargar de informar la cantidad de productos y carritos que alla guardados, y mostrarlos con un mensaje.
+    const index_router = Router()
+    index_router.use('/api',api_router)
+    //index_router.use('/',view_router)
 
-    //declaramos la ruta.
-    let index_route = '/'
-    //indicamos la funcion que va a cumplir.
-    let index_function = (req,res) => {
-        let quantity = manager.getProducts().length
-        let quantity2 = manager2.getCarts().length
-        console.log(quantity)
-        console.log(quantity2)
-        // informa la cantidad de products y carts que hay.
-        return res.send(`there are ${quantity} products, and there are ${quantity2} carts`)
-    }
-    // Definimos el endpoints , primero se pone la ruta y luego la funcion
-    server.get(index_route,index_function)
+    export default index_router
 
-- El segundo endpoints va a tener la ruta "/products", el cual se encarga de leer el archivo de productos y devolverlos dentro de un objeto. Y va a tener un limitador de productos a mostrar, en este caso es 5.
 
-    let query_route = '/products'
-    let query_function = (req,res) => {
-        //limita los productos a mostrar en el objeto.
-        let limit = req.query.limit ?? 5
-        let products = manager.getProducts().slice(0,limit)
-        //este if se encarga de consultar si hay productos, si no hay entonces devuelve not found.
-        if(products.length>0){
-            return res.send({
-                success: true,
-                products
-            })
-        } else{
-            return res.send({
-                success: false,
-                products: 'not found'
-            })
+- Ademas creamos 2 carpetas, una llamada "api" para las rutas de la api, y una llamada "views" para las rutas que vamos a renderizar desde el backend. Cada una de estas carpetas tendran un "index.js" que seran los enrutadores principales de la api y de las views.
+
+- Dentro del "index.js" de la carpeta "api" se define el endpoint del recurso (en este caso products y carts) y le asigna el enrutador de ese recurso.
+
+
+    import { Router } from "express";
+    import products_router from './products.js'
+    import cart_router from './carts.js'
+
+    const api_router = Router()
+
+    api_router.use('/products',products_router)
+    api_router.use('/carts',cart_router)
+
+    export default api_router 
+
+
+- Y dentro de "products.js" y "carts.js" que serian los enrutadores de recurso, tendremos los metodos "GET, POST, DELETE, PUT" para cada uno. Pero para poder ver los productos ahora es "/api/products" y para ver uno es "/api/products/:pid", y lo mismo con carts.
+
+
+    import { Router } from "express";
+    import manager from '../../managers/products.js'
+
+    const product_router = Router()
+
+    product_router.post('/', async(req,res,next)=> {
+        try {
+            let response = await manager.addProduct(req.body)
+            if (response===201) {
+                return res.json({ status:201,message:'product created'})
+            }
+            return res.json({ status:400,message:'not created'})
+        } catch(error) {
+            next(error)
         }
-    }
-    server.get(query_route,query_function)
-
-- El tercer endpoints va a tener la ruta "/products/id", el cual va a leer el archivo de productos y va a devolver el producto buscado por id.
-
-    let one_route = '/products/:id'
-    let one_function = (req,res) => {
-        //se encarga de buscar el id.
-        let parametros = req.params
-        let id = Number(parametros.id)
-        let one = manager.getProductById(id)
-        console.log(one)
-        // el if consulta si el id existe, si no existe entonces devuelve un objeto vacio.
-        if(one){
-            return res.send({
-                success: true, 
-                product: one
-            })
-        } else {
-            return res.send({
-                success: false, 
-                product: {}
-            })
+    })
+    product_router.get('/', async(req,res,next)=> {
+        try {
+            let products = manager.getProducts()
+            if (products.length>0) {
+                return res.json({ status:200,products })
+            }
+            let message = 'not found'
+            return res.json({ status:404,message })
+        } catch(error) {
+            next(error)
         }
-    }
-    server.get(one_route,one_function)
-
-Luego los endpoints de carts son los mismos pero con diferente ruta y buscan en los carritos. Pero la funcion es la misma
-
-- El primero con la ruta "/carts", lee el archivo de carritos y devuelve un objeto con las propiedades.
-
-    let querys_route = '/carts'
-    let querys_function = (req,res) => {
-        let limit = req.query.limit ?? 7
-        let carts = manager2.getCarts().slice(0,limit)
-        if(carts.length>0){
-            return res.send({
-                success: true,
-                carts
-            })
-        } else{
-            return res.send({
-                success: false,
-                carts: 'not found'
-            })
+    })
+    product_router.get('/:pid', async(req,res,next)=> {
+        try {
+            let id = Number(req.params.pid)
+            let product = manager.getProductById(id)
+            if (product) {
+                return res.json({ status:200,product })
+            }
+            let message = 'not found'
+            return res.json({ status:404,message })
+        } catch(error) {
+            next(error)
         }
-    }
-    server.get(querys_route,querys_function)
-
-- El segundo con la ruta "/carts/id", lee el archivo de carritos y devuelve un objeto con las propiedades del id buscado.
-
-    let two_route = '/carts/:id'
-    let two_function = (req,res) => {
-        let parametros = req.params
-        let id = Number(parametros.id)
-        let two = manager2.getCartById(id)
-        console.log(two)
-        if(two){
-            return res.send({
-                success: true, 
-                cart: two
-            })
-        } else {
-            return res.send({
-                success: false, 
-                cart: {}
-            })
+    })
+    product_router.put('/:pid', async(req,res,next)=> {
+        try {
+            let id = Number(req.params.pid)
+            let data = req.body
+            let response = await manager.updateProduct(id,data)
+            if (response===200) {
+                return res.json({ status:200,message:'product updated'})
+            }
+            return res.json({ status:404,message:'not found'})
+        } catch(error) {
+            next(error)
         }
-    }
-    server.get(two_route,two_function)
+    })
+    product_router.delete('/:pid', async(req,res,next)=> {
+        try {
+            let id = Number(req.params.pid)
+            let response = await manager.deleteProduct(id)
+            if (response===200) {
+                return res.json({ status:200,message:'product deleted'})
+            }
+            return res.json({ status:404,message:'not found'})
+        } catch(error) {
+            next(error)
+        }
+    })
+
+    export default product_router
+
+
+- Por ultimo, para comprobar estos metodos en products y carts, utilizamos la aplicacion POSTMAN, la cual nos permite comprobar cada uno de estos metodos y saber si funcionan o nodemon. 
+
+
+LAS IMAGENES ESTAN EN UNA CARPETA LLAMADA "fotos POSTMAN", donde se comprueba cuando funciona y cuando salta algun error.

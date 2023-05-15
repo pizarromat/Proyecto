@@ -8,7 +8,3 @@ api_router.use('/products',products_router)
 api_router.use('/carts',cart_router)
 
 export default api_router 
-
-//enrutador principal de la API (para enviar datos)
-
-// aca llamo solamente al enrutador de los recursos (product, cart, users)
